@@ -1,5 +1,7 @@
 package it.todolist.note;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import it.todolist.user.model.AppUser;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -27,4 +29,9 @@ public class Note {
     private LocalDate addedAt;
 
     private boolean checked = false;
+
+    @JsonBackReference
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private AppUser user;
 }

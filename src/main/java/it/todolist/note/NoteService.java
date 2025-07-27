@@ -1,10 +1,12 @@
 package it.todolist.note;
 
+import it.todolist.user.model.AppUser;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -12,23 +14,28 @@ public class NoteService {
     private final NoteRepository noteRepository;
     private final NoteMapper noteMapper;
 
-    public List<Note> findAllNotes() {
-        return noteRepository.findAll();
+    public List<NoteResponse> findAllNotes(AppUser user) {
+        return noteRepository.findAllByUser(user).stream()
+                .map(noteMapper::toResponse)
+                .collect(Collectors.toList());
     }
 
-    public Note findNoteById(Long id) {
-        return noteRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Nota non trovata con id: " + id));
+    public Note findNoteEntityById(AppUser user, Long id) {
+        return noteRepository.findByUserAndId(user, id).orElseThrow(() -> new EntityNotFoundException("Nota non trovata"));
     }
 
-    public Note createNote(NoteRequest request) {
-        Note note = noteMapper.toEntity(request);
+    public NoteResponse findNoteById(AppUser user, Long id) {
+        return noteMapper.toResponse(noteRepository.findByUserAndId(user, id).orElseThrow(() -> new EntityNotFoundException("Nota non trovata")));
+    }
+
+    public NoteResponse createNote(AppUser user, NoteRequest request) {
+        Note note = noteMapper.toEntity(user, request);
         noteRepository.save(note);
-        return note;
+        return noteMapper.toResponse(note);
     }
 
-    public void updateNote(Long id, NoteRequest request) {
-        Note note = findNoteById(id);
+    public void updateNote(AppUser user, Long id, NoteRequest request) {
+        Note note = findNoteEntityById(user, id);
         if (request.getName() != null) {
             note.setName(request.getName());
         }
@@ -46,8 +53,8 @@ public class NoteService {
         noteRepository.save(note);
     }
 
-    public void deleteNote (Long id) {
-        Note note = findNoteById(id);
+    public void deleteNote (AppUser user, Long id) {
+        Note note = findNoteEntityById(user, id);
         noteRepository.delete(note);
     }
 }
